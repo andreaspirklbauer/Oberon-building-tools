@@ -109,7 +109,7 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.5.23*)
       END ;
       IF res = noerr THEN (*read file*)
         INC(p, DescSize); (*allocate descriptor*)
-        mod.name := name; mod.key := key; mod.refcnt := 0; i := n;
+        mod.name := name; mod.key := key; mod.refcnt := 0; mod.unused := 0; i := n;
         WHILE i < MnLength DO mod.name[i] := 0X; INC(i) END ;
         mod.data := p;  (*data*)
         SYSTEM.PUT(mod.num * 4 + MTOrg, p);  (*module table entry*)
