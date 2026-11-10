@@ -22,6 +22,15 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.5.23*)
     importing*, imported*: ModuleName;
     W: Texts.Writer;
 
+  PROCEDURE GetArg(VAR S: Texts.Scanner);
+    VAR T: Texts.Text; beg, end, time: LONGINT;
+  BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
+    IF (S.class = Texts.Char) & (S.c = "^") THEN
+      Oberon.GetSelection(T, beg, end, time);
+      IF time >= 0 THEN Texts.OpenScanner(S, T, beg); Texts.Scan(S) END
+    END
+  END GetArg;
+
   PROCEDURE EndLine;
   BEGIN Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
   END EndLine;
@@ -33,12 +42,6 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.5.23*)
     REPEAT FName[i]:= ext[j]; INC(i); INC(j) UNTIL ext[j] = 0X;
     FName[i] := 0X
   END MakeFileName;
-
-  PROCEDURE ThisFile(name: ARRAY OF CHAR): Files.File;
-    VAR F: Files.File;
-      filename: ModuleName;
-  BEGIN MakeFileName(filename, name, ".rsc"); F := Files.Old(filename); RETURN F
-  END ThisFile;
 
   PROCEDURE error(n: INTEGER; name: ARRAY OF CHAR);
   BEGIN res := n; importing := name
@@ -77,12 +80,12 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.5.23*)
     WHILE (mod # NIL) & (name # mod.name) DO mod := mod.next END ;
     IF mod = NIL THEN (*link*)
       check(name, n);
-      IF res = noerr THEN F := ThisFile(name) ELSE F := NIL END ;
+      IF res = noerr THEN MakeFileName(name1, name, ".rsc"); F := Files.Old(name1) ELSE F := NIL END ;
       IF F # NIL THEN
         Files.Set(R, F, 0); Files.ReadString(R, name1); Files.ReadInt(R, key); Files.Read(R, ch);
         Files.ReadInt(R, size); importing := name1;
         IF (ch = versionkey) (*regular module*) OR (ch = versionkey0) (*standalone program*) THEN
-          Files.ReadString(R, impname);   (*imports*)
+          Files.ReadString(R, impname);  (*imports*)
           WHILE (impname[0] # 0X) & (res = noerr) DO
             Files.ReadInt(R, impkey);
             LinkOne(impname, impmod); import[nofimps] := impmod; importing := name1;
@@ -206,7 +209,7 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.5.23*)
       S: Texts.Scanner;
       M, p: Module;
       name: ModuleName;
-  BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S); res := -1;
+  BEGIN GetArg(S); res := -1;
     IF S.class = Texts.Name THEN
       root := NIL; Start := Modules.AllocPtr; MTOrg := Start + MTAdr; AllocPtr :=  Start + ModAdr; i := Start;
       WHILE i < AllocPtr DO SYSTEM.PUT(i, 0); INC(i, 4) END ;
@@ -256,7 +259,7 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.5.23*)
       F: Files.File; R: Files.Rider;
       S: Texts.Scanner;
       buf: ARRAY Kernel.SectorLength OF BYTE;
-  BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S); res := -1;
+  BEGIN GetArg(S); res := -1;
     IF S.class = Texts.Name THEN
       Texts.WriteString(W, "  loading "); Texts.WriteString(W, S.s); F := Files.Old(S.s);
       IF F # NIL THEN Texts.WriteString(W, " onto boot area"); Texts.WriteInt(W, Files.Length(F), 7);

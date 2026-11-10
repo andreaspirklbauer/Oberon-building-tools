@@ -509,6 +509,6 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.12.24 Extended Oberon*)
     EndLine
   END Execute;
 
-BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "OR Boot linker/loader  AP 1.12.24"); EndLine;
+BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "OR Boot linker/loader  AP 15.5.24"); EndLine;
   limit := Kernel.stackOrg - Kernel.stackSize
 END ORL.
